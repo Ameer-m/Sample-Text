@@ -1,336 +1,164 @@
 /**
- * Name:        APIFunctions
+ * Name:        SearchParamsFunctions
  * Created By:  Siobhán Murray
  * Created At:  23/September/2020
  * CR:          CHG000010639889
- * Description: API Functions to call the API and handle success/error events
+ * Description: Search Parameters Functions
  */
 /**
  * Changed By:  Siobhán Murray
- * Changed At:  09/November/2020
+ * Changed At:  20/October/2020
  * CR:          CHG000010656864
- * Description: Added getRegulatoryClass API
+ * Description: added function onExpandpnlSearchParams.
+ *  Added function setRegulatoryClassDropdown.
  */
 
 /**
- * Calls API getLegalEntity
+ * Populates the Legal Entity Dropdown from mdlLegalEntity
  */
- function callGetLegalEntity() {
-    let oOrder = {
-        "name": "ASC"
-    };
+ function setLegalEntityDropdown() {
+    let aLegalEntity = modelmdlLegalEntity.getData() || [];
 
-    let options = {
-        parameters: {
-            "order": JSON.stringify(oOrder)
-        }
-    };
-
-    oApp.setBusy(true);
-    apigetLegalEntity(options);
-}
-
-/**
- * On Success API getLegalEntity
- */
-function onSuccessGetLegalEntity() {
-    oApp.setBusy(false);
-    setLegalEntityDropdown();
-}
-
-/**
- * On Error API getLegalEntity
- * 
- * @param {Object} xhr
- */
-function onErrorGetLegalEntity(xhr) {
-    oApp.setBusy(false);
-    handleServerError(xhr);
-}
-
-/**
- * Call API getBusinessUnit
- */
-function callGetBusinessUnit() {
-    let oOrder = {
-        "UDIDescription": "ASC"
-    };
-
-    let options = {
-        parameters: {
-            "order": JSON.stringify(oOrder)
-        }
-    };
-    apigetBusinessUnit(options);
-}
-
-/**
- * On Success API getBusinessUnit
- */
-function onSuccessGetBusinessUnit() {
-    oApp.setBusy(false);
-    populateDropdownBusinessUnit();
-}
-
-/**
- * On Error getBusinessUnit
- * 
- * @param {Object} xhr
- */
-function onErrorGetBusinessUnit(xhr) {
-    oApp.setBusy(false);
-    handleServerError(xhr);
-}
-
-/**
- * Call API PhysicalSiteLocation
- */
-function callGetPhySiteLocation() {
-    let oOrder = {
-        "siteLocationName": "ASC"
-    };
-
-    let options = {
-        parameters: {
-            "order": JSON.stringify(oOrder)
-        }
-    };
-    apigetPhysicalSiteLocation(options);
-}
-
-/**
- * On Success API getBusinessUnit
- */
-function onSuccessGetPhySiteLocation() {
-    oApp.setBusy(false);
-    populateDropdownPhySiteLocation();
-}
-
-/**
- * On Error getBusinessUnit
- * 
- * @param {Object} xhr
- */
-function onErrorGetPhySiteLocation(xhr) {
-    oApp.setBusy(false);
-    handleServerError(xhr);
-}
-
-/**
- * Calls API getRegulatoryClass
- */
-function callGetRegulatoryClass() {
-    let oOrder = {
-        "type": "ASC"
-    };
-
-    let options = {
-        parameters: {
-            "order": JSON.stringify(oOrder)
-        }
-    };
-
-    oApp.setBusy(true);
-    apigetRegulatoryClass(options);
-}
-
-/**
- * On Success API getRegulatoryClass
- */
-function onSuccessGetRegulatoryClass() {
-    oApp.setBusy(false);
-    setRegulatoryClassDropdown();
-}
-
-/**
- * On Error API getRegulatoryClass
- * 
- * @param {Object} xhr
- */
-function onErrorGetRegulatoryClass(xhr) {
-    oApp.setBusy(false);
-    handleServerError(xhr);
-}
-
-/**
- * Calls API searchVerifications
- * 
- * @param {Object} oSearchParams
- */
-function callSearchVerifications(oSearchParams) {
-
-    if ("vasType" in oSearchParams) {
-        oSearchParams.vasType = oSearchParams.vasType.replace('&', '%26')
-    }
-
-    if ("docReference" in oSearchParams) {
-        oSearchParams.docReference = oSearchParams.docReference.replace('#', '%23')
-    }
-
-    if ("sku" in oSearchParams) {
-        oSearchParams.sku = oSearchParams.sku.replace('#', '%23')
-    }
-
-    var options = {
-        parameters: oSearchParams
-    };
-
-    tblResults.setBusy(true);
-    apisearchVerifications(options);
-}
-
-/**
- * On Success API searchVerifications
- */
-function onSuccessSearchVerifications() {
-    modifyResultsForDisplay();
-    tblResults.setBusy(false);
-    refreshRecordsCount();
-
-    //Show Message Toast
-    let recordCount = modeltblResults.getData().length;
-    let sMsg = (recordCount) ? recordCount + " " + txtTransRecordsFound.getText() : txtTransNoRecordsFound.getText();
-    sap.m.MessageToast.show(sMsg);
-
-}
-
-/**
- * On Error API searchVerifications
- * 
- * @param {Object} xhr
- */
-function onErrorSearchVerifications(xhr) {
-    tblResults.setBusy(false);
-    handleServerError(xhr);
-
-}
-
-/**
- * Call API getAllDocs or all docs with a given reference
- * @param {String} reference
- */
-async function getAllDocs(reference) {
-    const options = {
-        parameters: {
-            "docRef": reference
-        }
-    };
-    options.parameters.docRef = options.parameters.docRef.replace('#', '%23');
-    try {
-        await apigetDocList(options);
-    } catch (err) {
-        handleServerError(err);
-    }
-}
-
-/**
- * Call API getAllIfus or all ifus with a given reference
- * @param {String} reference
- */
-async function getAllIfus(reference) {
-    const options = {
-        parameters: {
-            "ifuRef": reference
-        }
-    };
-
-    try {
-        await apigetIfuList(options);
-    } catch (err) {
-        handleServerError(err);
-    }
-}
-
-/**
- * Call API getAllPils or all pils with a given reference
- * @param {String} reference
- */
-async function getAllPils(reference) {
-    const options = {
-        parameters: {
-            "reference": reference
-        }
-    };
-
-    try {
-        await apigetPilList(options);
-    } catch (err) {
-        handleServerError(err);
-    }
-}
-
-/**
- * Call API getAllExtraVF or all extravf with a given reference
- * @param {String} reference
- */
-async function getAllExtraVF(reference) {
-    const options = {
-        parameters: {
-            "extravfRef": reference
-        }
-    };
-
-    try {
-        await apigetExtraVFList(options);
-    } catch (err) {
-        handleServerError(err);
-    }
-}
-
-/**
- * getProduct
- * @param {String} sku
- */
-async function getAllProducts(sku) {
-    const options = {
-        parameters: {
-            "sku": sku
-        }
-    };
-
-    try {
-        await apigetProductList(options);
-    } catch (err) {
-        handleServerError(err);
-    }
-}
-
-/**
- * addSuggestionsToField
- * 
- * @param {Object} xhr
- * @param {String} searchFieldType
- */
-function addSuggestionsToField(xhr, searchFieldType) {
-    const searchFieldSuggestion = {
-        "suggestion": xhr.responseJSON
-    };
-    const searchParamsModelWithSuggestions = { ...modelpnlSearchParams.getData(), ...searchFieldSuggestion }
-    modelpnlSearchParams.setData(searchParamsModelWithSuggestions);
-    const suggestionItem = new sap.m.SuggestionItem("suggestionItem", {
-        text: searchFieldType
+    inSearchParamslegalEntity.destroyItems();
+    inSearchParamslegalEntity.addItem(new sap.ui.core.Item());
+    aLegalEntity.forEach(function (data, i) {
+        inSearchParamslegalEntity.addItem(
+            new sap.ui.core.Item({
+                key: data.eovLMId,
+                text: data.name
+            })
+        );
     });
 
+}
+
+/**
+ * Populate Dropdown: Business Unit inSearchParamsbusinessUnit
+ */
+function populateDropdownBusinessUnit() {
+    let aBusinessUnits = modelmdlBusinessUnit.getData() || [];
+
+    inSearchParamsbusinessUnit.destroyItems();
+    inSearchParamsbusinessUnit.addItem(new sap.ui.core.Item());
+    aBusinessUnits.forEach(function (data, i) {
+        inSearchParamsbusinessUnit.addItem(
+            new sap.ui.core.ListItem({
+                key: data.code,
+                text: data.UDIDescription,
+                additionalText: data.code
+            })
+        );
+    });
+}
+
+/**
+ * Populate Dropdown: Physical Site Location inSearchParamsphysSiteLocation
+ */
+function populateDropdownPhySiteLocation() {
+    let aPhySiteLocation = modelmdlPhysicalSiteLocation.getData() || [];
+    inSearchParamsphysSiteLocation.destroyItems();
+    inSearchParamsphysSiteLocation.addItem(new sap.ui.core.Item());
+    aPhySiteLocation.forEach(function (data, i) {
+        inSearchParamsphysSiteLocation.addItem(
+            new sap.ui.core.ListItem({
+                key: data.id,
+                text: data.siteLocationName,
+                additionalText: data.code
+            })
+        );
+    });
+}
+/**
+ * Populates the Regulatory Class Dropdown from mdlRegulatoryClass
+ */
+function setRegulatoryClassDropdown() {
+    let aRegClass = modelmdlRegulatoryClass.getData() || [];
+
+    inSearchParamsregClass.destroyItems();
+    inSearchParamsregClass.addItem(new sap.ui.core.Item());
+    aRegClass.forEach(function (data, i) {
+        inSearchParamsregClass.addItem(
+            new sap.ui.core.ListItem({
+                key: data.type,
+                text: data.description,
+                additionalText: data.type
+            })
+        );
+    });
+
+}
+
+/**
+ * Clear Search Parameters of their values
+ */
+function clearSearch() {
+    modelpnlSearchParams.setData({});
+    lblfrmDetailVasTypeComboBox.clearSelection();
+}
+
+/**
+ * When the Search Panel is opened or closed
+ * 
+ * @param {Object} oEvent
+ */
+function onExpandpnlSearchParams(oEvent) {
+    const bExpand = oEvent.getParameter("expand");
+    butClearSearchFields.setVisible(bExpand);
+    butSearch.setVisible(bExpand);
+}
+
+/**
+ * onInputChange
+ * 
+ * @param {Object} oEvent
+ * @param {String} searchFieldType
+ */
+function onInputChange(oEvent, searchFieldType) {
+    const filterValue = oEvent.getSource().getValue();
+    const newValue = oEvent.getParameter("newValue");
     switch (searchFieldType) {
         case goReferenceType.DOC:
-            inSearchParamsdocReference.bindAggregation("suggestionItems", "/suggestion", suggestionItem);
-            toggleVal = true;
+            getAllDocs(filterValue);
+            inSearchParamsdocReference.setValue(newValue)
             break;
         case goReferenceType.IFU:
-            inSearchParamsifuReference.bindAggregation("suggestionItems", "/suggestion", suggestionItem);
-            toggleVal = true;
+            getAllIfus(filterValue);
+            inSearchParamsifuReference.setValue(newValue)
             break;
         case goReferenceType.PIL:
-            inSearchParamsPilReference.bindAggregation("suggestionItems", "/suggestion", suggestionItem);
-            toggleVal = true;
+            getAllPils(filterValue);
+            inSearchParamsPilReference.setValue(newValue)
             break;
         case goReferenceType.SKU:
-            inSearchParamssku.bindAggregation("suggestionItems", "/suggestion", suggestionItem);
-            toggleVal = true;
+            getAllProducts(filterValue);
+            inSearchParamssku.setValue(newValue)
             break;
         case goReferenceType.Extra:
-            inSearchParamsextraReference.bindAggregation("suggestionItems", "/suggestion", suggestionItem);
-            toggleVal = true;
+            getAllExtraVF(filterValue);
+            inSearchParamsextraReference.setValue(newValue)
             break;
     }
+}
+
+/**
+ * onSuggest - suggest items containing suggested character
+ * 
+ * @param {Object} oEvent
+ * @param {String} bindingPath
+ */
+function onSuggest(oEvent, bindingPath) {
+    const aFilters = [];
+    const sTerm = oEvent.getParameter("suggestValue");
+    if (sTerm) {
+        aFilters.push(new sap.ui.model.Filter(bindingPath, sap.ui.model.FilterOperator.Contains, sTerm));
+    }
+    oEvent.getSource().getBinding("suggestionItems").filter(aFilters);
+    oEvent.getSource().setFilterSuggests(false);
+}
+
+/**
+ * Set Pre Defined VasType List to the MultiComboBox.
+*/
+function setVasTypeToComboBox() {
+    modellblfrmDetailVasTypeComboBox.setData(vasType);
 }
