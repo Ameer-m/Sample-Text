@@ -63,7 +63,6 @@
  * CR: X
  * Description: Enhancement change of AGXH-4924 & AGXH-5083, merge
  */
-
  const gsDocReference = req.query.docReference || "";
  //PRODUCT
  const gsLegalEntity = req.query.legalEntity || "";
@@ -85,28 +84,6 @@
  
  const gsVasType = req.query.vasType || "";
  const gsNpi = req.query.npi || "";
- 
- // const gsDocReference = "DOCA" ;
- // //PRODUCT
- // const gsLegalEntity = "";
- // const gsEU = "";
- // const gsJnJ = "";
- // const gsSKU = "";
- // const gsVariant = "";
- // const gsSterile = "";
- // const gsRegClass = "";
- // const gsBuCode = "";
- // const gsarStatus = "";
- // const gsextraStatus = "";
- 
- // //USER
- // const gsLanguage = "EN";
- 
- // //PHYSICAL
- // const gsPhysSiteLocationId = "";
- 
- // const gsVasType = "";
- // const gsNpi = "";
  
  //Global variables
  const NA_STRING = "N/A";
@@ -176,9 +153,6 @@
    statusCode: 200,
    data: filteredResultsByQueryParams
  };
- 
- //console.log(result)
- 
  complete();
  
  /**
@@ -530,19 +504,15 @@
    record.product_countryLimitations = hasCountryLimitations ? getCountryLimitationsDescription(countryLimitationsCodes, countries) : "No country limitation";
    record.hasCountryLimitations = hasCountryLimitations;
  
-   // const docStatusWhenIsJnJNonEu = useArDoc ? (arDoCHasMultipleLMs ? VerificationStatus.ErrorDoCMultipleLM : NA_STRING) : record.docVerification_status;
-   // record.docVerification_status = isJnJNonEu ? docStatusWhenIsJnJNonEu : record.docVerification_status ;
- 
-   const docStatusWhenIsJnJNonEu = false ? (arDoCHasMultipleLMs ? VerificationStatus.ErrorDoCMultipleLM : NA_STRING) : record.docVerification_status;
-   record.docVerification_status = record.latestVerification === "DOC" ? isJnJNonEu ? docStatusWhenIsJnJNonEu : record.docVerification_status : NA_STRING;
+   const docStatusWhenIsJnJNonEu = useArDoc ? (arDoCHasMultipleLMs ? VerificationStatus.ErrorDoCMultipleLM : NA_STRING) : record.docVerification_status;
+   record.docVerification_status = isJnJNonEu ? docStatusWhenIsJnJNonEu : record.docVerification_status;
  
    const arStatusWhenIsNonJnJOrIsEu = arVerificationSubmitted ?
      (arDoCHasMultipleVerifications ? VerificationStatus.ErrorDoCMultipleVerifications
        : arDoCHasMultipleLMs ? VerificationStatus.ErrorDoCMultipleLM
          : record.arVerification_status)
      : "";
-   //record.arVerification_status = isNonJnJOrIsEu ? NA_STRING : arStatusWhenIsNonJnJOrIsEu;
-   record.arVerification_status = record.latestVerification === "AR" ? arStatusWhenIsNonJnJOrIsEu : NA_STRING
+   record.arVerification_status = isNonJnJOrIsEu ? NA_STRING : arStatusWhenIsNonJnJOrIsEu;
    record.arVerificationSubmitted = arVerificationSubmitted;
  
    const verificationsStatusAndDate = getVerificationsStatusAndDate(record);
@@ -885,7 +855,7 @@
    const filedsToRemove = ["ifu_ifuRef", "ifu_ifuRev", "pil_reference", "pil_revision"];
    filedsToRemove.forEach(field => delete record[`${field}`]);
  
-   const verificationFieldsToRemove = ["updatedBy", "comments", "strategyDescription", "strategyId", "taskTypeId"];
+   const verificationFieldsToRemove = ["updatedBy", "comments", "strategyDescription", "strategyId", "taskTypeId", "verificationStartedAt", "verificationClosedAt"];
    verificationFieldsToRemove.forEach(field => delete record[`${prefix}Verification_${field}`]);
  }
  
@@ -1015,6 +985,7 @@
   * @returns {[Object]} countryLimitationRemovalsForSkus
   */
  async function getCountryLimitationRemovalsForSkus() {
+   const { In } = operators;
    return await entities.eu_mdr_country_limitations_sku_history.find({
      select: ["sku", "variant", "createdAt"]
    });
@@ -1027,6 +998,8 @@
   * @returns {[Object]} countryLimitationRemovalsForDocuments
   */
  async function getCountryLimitationRemovalsForDocuments(isForIfu) {
+   const { In } = operators;
+ 
    const countryRemovalsForDocuments = await entities.eu_mdr_country_limitations_doc_history.find({
      select: ["reference", "revision", "createdAt"],
      where: {
@@ -1253,7 +1226,6 @@
    let promises = await getDataWithLatestDocStatus(aResults);
  
    return Promise.all(promises).then(function (aResults) {
-     console.log(aResults)
  
      if (gsVasType) {
        const filteredData = aResults.map((item) => {
@@ -1341,9 +1313,6 @@
  async function getDataWithLatestDocStatus(aResults) {
  
    const finalResult = aResults.map(async function (obj) {
- 
-     obj.latestVerification = "";
- 
      if (obj.product_vasType === null || obj.product_vasType === "") {
        obj.product_vasType = "No VAS"
      }
@@ -1354,20 +1323,15 @@
          .orderBy({ "arVerification.updatedAt": "DESC" })
          .getOne();
  
+ 
        const latestDoc = await entities.eu_mdr_verification_task.createQueryBuilder("docVerification")
          .where("docVerification.reference = :reference", { reference: obj.doc_docRef })
          .andWhere("docVerification.taskTypeId = :taskTypeId", { taskTypeId: "EV_DOC" })
          .orderBy({ "docVerification.updatedAt": "DESC" })
          .getOne();
  
-       const latestDocRev = await entities.eu_mdr_doc_master.createQueryBuilder("docMaster")
-         .where("docMaster.sku = :sku", { sku: obj.product_sku })
-         .orderBy({ "docMaster.updatedAt": "DESC" })
-         .getOne();
- 
        if (latestAr && latestDoc) {
          if (latestAr.updatedAt > latestDoc.updatedAt) {
-           obj.latestVerification = "AR";
            obj.doc_docRef = latestAr.docReference;
            obj.doc_docRev = latestAr.docRevision;
            obj.arVerification_status = latestAr.status;
@@ -1388,7 +1352,8 @@
              obj.docVerification_verificationStartedAt = latestDocDetails.verificationStartedAt;
              obj.docVerification_verificationClosedAt = latestDocDetails.verificationClosedAt;
              obj.docVerification_id = latestDocDetails.id;
-           } else {
+           }
+           else {
              obj.docVerification_taskRecordNo = null;
              obj.docVerification_strategyId = null;
              obj.docVerification_taskTypeId = null;
@@ -1399,24 +1364,23 @@
              obj.docVerification_verificationClosedAt = null;
              obj.docVerification_id = null;
            }
-         } else {
-           obj.latestVerification = "DOC";
-           if (obj.doc_docRev === latestDoc.revision) {
-             obj.doc_docRef = latestDoc.reference;
-             obj.doc_docRev = latestDoc.revision;
-             obj.docVerification_taskRecordNo = latestDoc.taskRecordNo;
-             obj.docVerification_strategyId = latestDoc.strategyId;
-             obj.docVerification_taskTypeId = latestDoc.taskTypeId;
-             obj.docVerification_status = latestDoc.status;
-             obj.docVerification_updatedBy = latestDoc.updatedBy;
-             obj.docVerification_comments = latestDoc.comments;
-             obj.docVerification_verificationStartedAt = latestDoc.verificationStartedAt;
-             obj.docVerification_verificationClosedAt = latestDoc.verificationClosedAt;
-             obj.docVerification_id = latestDoc.id;
-           }
+         }
+         else {
+           obj.doc_docRef = latestDoc.reference;
+           obj.doc_docRev = latestDoc.revision;
+ 
+           obj.docVerification_taskRecordNo = latestDoc.taskRecordNo;
+           obj.docVerification_strategyId = latestDoc.strategyId;
+           obj.docVerification_taskTypeId = latestDoc.taskTypeId;
+           obj.docVerification_status = latestDoc.status;
+           obj.docVerification_updatedBy = latestDoc.updatedBy;
+           obj.docVerification_comments = latestDoc.comments;
+           obj.docVerification_verificationStartedAt = latestDoc.verificationStartedAt;
+           obj.docVerification_verificationClosedAt = latestDoc.verificationClosedAt;
+           obj.docVerification_id = latestDoc.id;
  
            const latestArDetails = await entities.eu_mdr_auth_rep_task.createQueryBuilder("docVerification")
-             .where({ docReference: latestDoc.reference, docRevision: obj.doc_docRev })
+             .where({ docReference: latestDoc.reference, docRevision: latestDoc.revision })
              .orderBy({ "docVerification.updatedAt": "DESC" })
              .getOne();
  
@@ -1424,55 +1388,52 @@
              obj.arVerification_status = latestArDetails.status;
              obj.arVerification_verificationClosedAt = latestArDetails.verificationClosedAt;
            }
+ 
          }
-       } else {
+       }
+       else {
          if (latestAr && !latestDoc) {
-           obj.latestVerification = "AR";
-           if (obj.doc_docRev === latestAr.docRevision) {
-             obj.arVerification_status = latestAr.status;
-             obj.arVerification_verificationClosedAt = latestAr.verificationClosedAt;
-             obj.doc_docRef = latestAr.docReference;
-             obj.doc_docRev = latestAr.docRevision;
-           } else {
-             if (obj.arVerification_status === null) {
-               obj.doc_docRev = latestDocRev.docRev;
-             } else {
-               obj.doc_docRev = obj.doc_docRev;
-             }
-           }
-         } else if (!latestAr && latestDoc) {
-           obj.latestVerification = "DOC";
-           if (obj.doc_docRev === latestDoc.revision) {
-             obj.doc_docRef = latestDoc.reference;
-             obj.doc_docRev = latestDoc.revision;
-             obj.docVerification_taskRecordNo = latestDoc.taskRecordNo;
-             obj.docVerification_strategyId = latestDoc.strategyId;
-             obj.docVerification_taskTypeId = latestDoc.taskTypeId;
-             obj.docVerification_status = latestDoc.status;
-             obj.docVerification_updatedBy = latestDoc.updatedBy;
-             obj.docVerification_comments = latestDoc.comments;
-             obj.docVerification_verificationStartedAt = latestDoc.verificationStartedAt;
-             obj.docVerification_verificationClosedAt = latestDoc.verificationClosedAt;
-             obj.docVerification_id = latestDoc.id;
-             obj.docVerification_strategyId = latestDoc.strategyId;
-           } else {
-             if (obj.docVerification_status === null) {
-               obj.doc_docRev = latestDocRev.docRev;
-             } else {
-               obj.doc_docRev = obj.doc_docRev;
-             }
-           }
-         } else {
-           obj.doc_docRev = latestDocRev.docRev;
+           obj.arVerification_status = latestAr.status;
+           obj.arVerification_verificationClosedAt = latestAr.verificationClosedAt;
+           obj.doc_docRef = latestAr.docReference;
+           obj.doc_docRev = latestAr.docRevision;
          }
+         else if (!latestAr && latestDoc) {
+           obj.doc_docRef = latestDoc.reference;
+           obj.doc_docRev = latestDoc.revision;
+           obj.docVerification_taskRecordNo = latestDoc.taskRecordNo;
+           obj.docVerification_strategyId = latestDoc.strategyId;
+           obj.docVerification_taskTypeId = latestDoc.taskTypeId;
+           obj.docVerification_status = latestDoc.status;
+           obj.docVerification_updatedBy = latestDoc.updatedBy;
+           obj.docVerification_comments = latestDoc.comments;
+           obj.docVerification_verificationStartedAt = latestDoc.verificationStartedAt;
+           obj.docVerification_verificationClosedAt = latestDoc.verificationClosedAt;
+           obj.docVerification_id = latestDoc.id;
+           obj.docVerification_strategyId = latestDoc.strategyId;
+         }
+         // else {
+         //   const latestRevision = await entities.eu_mdr_doc_master.createQueryBuilder("docmaster")
+         //     .where("docmaster.docRef = :docRef", { docRef: obj.doc_docRef })
+         //     .orderBy({ "docmaster.createdAt": "DESC" })
+         //     .getOne();
+ 
+         //   obj.doc_docRef = latestRevision.docRef;
+         //   obj.doc_docRev = latestRevision.docRev;
+         // }
+ 
        }
        obj.product_businessCode = obj.bucode_UDIDescription;
        obj.product_class = obj.sku_regulatoryClass;
-       return obj;
-     } else {
+ 
        return obj;
      }
+     else {
+       return obj;
+     }
+ 
    })
+ 
    return finalResult;
  }
  
