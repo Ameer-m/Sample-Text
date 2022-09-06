@@ -110,13 +110,13 @@ function generateDatabaseDateTime(date) {
     hour:'2-digit',
     minute:'2-digit',
     second:'2-digit',
-    hour12: false
+    hour12: true
   }).formatToParts(dateNumberOrString).reduce((acc, part) => {
     acc[part.type] = part.value;
       return acc;
   }, {});
 
-    let chgDate=`${p.year}-${p.month}-${p.day} ${p.hour}:${p.minute}:${p.second}`;
+    let chgDate=`${p.year}-${p.month}-${p.day} ${p.hour}:${p.minute}:${p.second} ${p.dayPeriod}`;
     let flDate;
     if (dateNumberOrString = (date === "1970-01-01 05:30:00") ? "" : date) {
         flDate=chgDate;
