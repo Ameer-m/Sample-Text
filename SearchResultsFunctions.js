@@ -1,104 +1,64 @@
 /**
- * VerificationService
- * Created By:  vnavassa
+ * Name:        onInit
+ * Created By:  Siobhán Murray
+ * Created At:  23/September/2020
+ * CR:          CHG000010639889
+ * Description: On Init Event
  */
-
 /**
- * setMultipleFields
- * @param {Object} - record
- * @param {[Object]} - verifications
- * @param {[String]} - fields
- * @param {String} - prefix
- * @return Void
+ * Changed By:  Siobhán Murray
+ * Changed At:  20/October/2020
+ * CR:          CHG000010656864
+ * Description: added logic to show/hide initial columns (based on toggle buttons)
+ *  Added custom Context Menu for date columns
  */
- function setMultipleFields(record, verifications, fields, prefix) {
-    fields.forEach(field => {
-        record[`${prefix}${field}`] = concatArray(verifications.map(verification => verification === null ? "" : verification[field]));
-    });
-}
-
 /**
- * getDurationForMultiple
- * @param {[Object]} - verifications
- * @return {String} - duration
+ * Changed By:  Donncahdh O'Leary
+ * Changed At:  19/October/2021
+ * CR:          X
+ * Description: added logic to facilitate Products Pending Physical Verification
+ * report to run this in dialog
  */
-function getDurationForMultiple(verifications) {
-    if (verifications.length === 1) {
-        const verification = verifications[0];
-        return verification === null ? "" : verification.duration;
-    }
-
-    const hasIncompletedVerifications = verifications.some(verification => verification === null);
-
-    if (hasIncompletedVerifications) {
-        return "";
-    }
-
-    const durations = verifications.filter(verification => verification !== null && verification.duration !== null).map(verification => verification.duration);
-    if (durations.length === 0) {
-        return "";
-    }
-    return durations.reduce((a, b) => Number(a) + Number(b)) / durations.length;
-}
-
 /**
- * getStatusForMultiple
- * @param {[Object]} - verifications
- * @param {[Object]} - statusForDocument
- * @return {String} - statuses
+ * Changed By:  Anuradha Gurram
+ * Changed At:  03/May/2022
+ * CR:          X
+ * Description: added logic to facilitate Extra VF Verification report
  */
-function getStatusForMultiple(verifications, statusForDocument) {
-    if (verifications.length === 0) {
-        return formatTaskStatus("N");
-    }
-
-    if (statusForDocument === "N/A") {
-        return "N/A";
-    }
-    return concatArray(verifications.map(verification => verification !== null ? formatTaskStatus(verification.status) : formatTaskStatus("N")));
-}
-
-/**
- * getTrackwiseNumberForMultiple
- * @param {[Object]} - verifications
- * @return {String} - trackwiseNumbers
- */
-function getTrackwiseNumberForMultiple(verifications) {
-    if (verifications.length === 0) {
-        return " ";
-    }
-    return concatArray(verifications.map(verification => verification !== null ? concatArray(verification.trackwiseNo) : ""));
-}
-
-/**
- * getMaxCloseDate
- * @param {[Object]} - verifications
- * @return {String} - maxCloseDates
- */
-function getMaxCloseDate(verifications) {
-    const closeDates = verifications.map(verification => verification !== null ? verification.verificationClosedAt : 0);
-    return closeDates.length ? Math.max(...closeDates) : "";
-}
-
-/**
- * concatArray
- * @param {[Object]} - array
- * @return {String} - concatString
- */
-function concatArray(array) {
-    const concatString = " | ";
-    const dateVal= array === "" ? "" : array;
-    return dateVal.join(concatString);
-}
-
-/**
- * verificatiocCSV
- * @param {[Object]} - verificationDate
- * @return {String} - epoch timestamp
- */
-function verificatiocCSV(csvDate) {
+ callGetBusinessUnit();
+ callGetLegalEntity();
+ callGetRegulatoryClass();
+ callGetPhySiteLocation();
+ setVasTypeToComboBox();
  
- const vDate=Math.round(new Date(csvDate).getTime()/1000);
+ //Initial setting of column display (show/hide columns)
+ toggleDisplay(butToggleProduct.getPressed(), 'product');
+ toggleDisplay(butToggleProduct.getPressed(), 'legalEntity');
+ toggleDisplay(butToggleProduct.getPressed(), 'sku');
+ toggleDisplay(butToggleProduct.getPressed(), 'bucode');
+ toggleDisplay(butToggleDOC.getPressed(), 'docVerification');
+ toggleDisplay(butToggleIFU.getPressed(), 'ifuVerification');
+ toggleDisplay(butTogglePhysical.getPressed(), 'physVerification');
+ toggleDisplay(butToggleLST.getPressed(), 'vasVerification');
+ toggleDisplay(butToggleCountry.getPressed(), 'countryVerification');
+ toggleDisplay(butTogglePil.getPressed(), 'pilVerification');
+ toggleDisplay(butToggleExtraVF.getPressed(), 'extraVerification');
  
- return vDate;
-}
+ //Custom Column Menu for Dates
+ addCustomDateColumnMenu(coltblResultsdocVerificationClosedAt);
+ addCustomDateColumnMenu(coltblResultsifuVerificationClosedAt);
+ addCustomDateColumnMenu(coltblResultsphysVerificationClosedAt);
+ addCustomDateColumnMenu(coltblResultslstVerificationClosedAt);
+ addCustomDateColumnMenu(coltblResultscountryVerificationClosedAt);
+ addCustomDateColumnMenu(coltblResultsPilVerificationClosedAt);
+ addCustomDateColumnMenu(coltblResultsfinalVerificationCompletedDate);
+ addCustomDateColumnMenu(coltblResultsextraVerificationClosedAt);
+ 
+ //Logic for pending physical report ato run this in dialog
+ if (AppCache.LoadOptions.startParams) {
+     pnlSearchParams.setExpanded(false);
+     inSearchParamssku.setValue(AppCache.LoadOptions.startParams.sku);
+     inSearchParamsvariant.setValue(AppCache.LoadOptions.startParams.variant);
+     search();
+ }
+ 
