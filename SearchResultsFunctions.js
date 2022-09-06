@@ -1,64 +1,52 @@
 /**
- * Name:        onInit
+ * Name:        GlobalVariables
  * Created By:  Siobhán Murray
  * Created At:  23/September/2020
  * CR:          CHG000010639889
- * Description: On Init Event
+ * Description: Global Variables
  */
 /**
  * Changed By:  Siobhán Murray
  * Changed At:  20/October/2020
  * CR:          CHG000010656864
- * Description: added logic to show/hide initial columns (based on toggle buttons)
- *  Added custom Context Menu for date columns
+ * Description: Added INCOMPLETE status I
  */
 /**
- * Changed By:  Donncahdh O'Leary
- * Changed At:  19/October/2021
- * CR:          X
- * Description: added logic to facilitate Products Pending Physical Verification
- * report to run this in dialog
+ * Changed By:  Siobhán Murray
+ * Changed At:  12/August/2021
+ * CR:          
+ * Description: Added ERROR_DOC_MULTIPLE_LM and ERROR_DOC_MULTIPLE_VERIFICATIONS statuses
  */
-/**
- * Changed By:  Anuradha Gurram
- * Changed At:  03/May/2022
- * CR:          X
- * Description: added logic to facilitate Extra VF Verification report
- */
- callGetBusinessUnit();
- callGetLegalEntity();
- callGetRegulatoryClass();
- callGetPhySiteLocation();
- setVasTypeToComboBox();
+
  
- //Initial setting of column display (show/hide columns)
- toggleDisplay(butToggleProduct.getPressed(), 'product');
- toggleDisplay(butToggleProduct.getPressed(), 'legalEntity');
- toggleDisplay(butToggleProduct.getPressed(), 'sku');
- toggleDisplay(butToggleProduct.getPressed(), 'bucode');
- toggleDisplay(butToggleDOC.getPressed(), 'docVerification');
- toggleDisplay(butToggleIFU.getPressed(), 'ifuVerification');
- toggleDisplay(butTogglePhysical.getPressed(), 'physVerification');
- toggleDisplay(butToggleLST.getPressed(), 'vasVerification');
- toggleDisplay(butToggleCountry.getPressed(), 'countryVerification');
- toggleDisplay(butTogglePil.getPressed(), 'pilVerification');
- toggleDisplay(butToggleExtraVF.getPressed(), 'extraVerification');
- 
- //Custom Column Menu for Dates
- addCustomDateColumnMenu(coltblResultsdocVerificationClosedAt);
- addCustomDateColumnMenu(coltblResultsifuVerificationClosedAt);
- addCustomDateColumnMenu(coltblResultsphysVerificationClosedAt);
- addCustomDateColumnMenu(coltblResultslstVerificationClosedAt);
- addCustomDateColumnMenu(coltblResultscountryVerificationClosedAt);
- addCustomDateColumnMenu(coltblResultsPilVerificationClosedAt);
- addCustomDateColumnMenu(coltblResultsfinalVerificationCompletedDate);
- addCustomDateColumnMenu(coltblResultsextraVerificationClosedAt);
- 
- //Logic for pending physical report ato run this in dialog
- if (AppCache.LoadOptions.startParams) {
-     pnlSearchParams.setExpanded(false);
-     inSearchParamssku.setValue(AppCache.LoadOptions.startParams.sku);
-     inSearchParamsvariant.setValue(AppCache.LoadOptions.startParams.variant);
-     search();
- }
- 
+ // goTaskStatus: Possible statuses of a Verification Task
+ const goTaskStatus = {
+    NEW: "N",
+    HOLD: "H",
+    PASS: "P",
+    FAIL: "F",
+    INCOMPLETE: "I",
+    ERROR_DOC_MULTIPLE_LM: "ERROR_DOC_MULTIPLE_LM",
+    ERROR_DOC_MULTIPLE_VERIFICATIONS: "ERROR_DOC_MULTIPLE_VERIFICATIONS"
+};
+
+
+var goColumnForDateFilter = {};
+
+const goReferenceType = {
+    DOC: "{docRef}",
+    IFU: "{ifuRef}",
+    Extra: "{extravfRef}",
+    PIL: "{reference}",
+    SKU: "{product_sku}"
+}
+
+//VasType Items = It should be displayed as prepopulated list. 
+const vasType = [
+  { "vasType": "Outserting" },
+  { "vasType": "Relabeling" },
+  { "vasType": "U-code" },
+  { "vasType": "Bid&Tender" },
+  { "vasType": "SwissRep" },
+  { "vasType": "No VAS" }
+];
