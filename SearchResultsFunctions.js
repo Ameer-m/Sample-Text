@@ -158,15 +158,19 @@ function onErrorGetRegulatoryClass(xhr) {
  * @param {Object} oSearchParams
  */
 function callSearchVerifications(oSearchParams) {
-    
-    if("vasType" in oSearchParams){
-        oSearchParams.vasType = oSearchParams.vasType.replace('&' , '%26')
+
+    if ("vasType" in oSearchParams) {
+        oSearchParams.vasType = oSearchParams.vasType.replace('&', '%26')
     }
 
-    if("docReference" in oSearchParams){
+    if ("docReference" in oSearchParams) {
         oSearchParams.docReference = oSearchParams.docReference.replace('#', '%23')
     }
-   
+
+    if ("sku" in oSearchParams) {
+        oSearchParams.sku = oSearchParams.sku.replace('#', '%23')
+    }
+
     var options = {
         parameters: oSearchParams
     };
@@ -211,7 +215,7 @@ async function getAllDocs(reference) {
             "docRef": reference
         }
     };
-    options.parameters.docRef = options.parameters.docRef.replace('#','%23');
+    options.parameters.docRef = options.parameters.docRef.replace('#', '%23');
     try {
         await apigetDocList(options);
     } catch (err) {
@@ -307,26 +311,26 @@ function addSuggestionsToField(xhr, searchFieldType) {
         text: searchFieldType
     });
 
-    switch(searchFieldType){
+    switch (searchFieldType) {
         case goReferenceType.DOC:
             inSearchParamsdocReference.bindAggregation("suggestionItems", "/suggestion", suggestionItem);
-            toggleVal=true;
+            toggleVal = true;
             break;
         case goReferenceType.IFU:
             inSearchParamsifuReference.bindAggregation("suggestionItems", "/suggestion", suggestionItem);
-            toggleVal=true;
+            toggleVal = true;
             break;
         case goReferenceType.PIL:
             inSearchParamsPilReference.bindAggregation("suggestionItems", "/suggestion", suggestionItem);
-            toggleVal=true;
+            toggleVal = true;
             break;
         case goReferenceType.SKU:
             inSearchParamssku.bindAggregation("suggestionItems", "/suggestion", suggestionItem);
-            toggleVal=true;
+            toggleVal = true;
             break;
         case goReferenceType.Extra:
             inSearchParamsextraReference.bindAggregation("suggestionItems", "/suggestion", suggestionItem);
-            toggleVal=true;
+            toggleVal = true;
             break;
     }
 }
