@@ -145,14 +145,6 @@ function callGetProducts(oOrder, sku) {
 function onSuccessGetProducts() {
   setMasterTitle();
   oApp.setBusy(false);
-  if (AppCache.LoadOptions.dialogShow) {
-      const searchedDataArr = oList.getModel().oData;
-      const selectedObj = AppCache.LoadOptions.startParams;
-      const selectedItemObj = searchedDataArr.filter((item) => item.sku === selectedObj.sku && item.variant === selectedObj.variant);
-      listItemPressed(selectedItemObj[0]);
-      var filteredDataModel = new sap.ui.model.json.JSONModel(selectedItemObj);
-      oList.setModel(filteredDataModel);
-  }
 }
 
 /**
@@ -170,7 +162,7 @@ async function getSku(sku) {
   const options = {
       parameters: {
           "where": JSON.stringify({
-              "sku": sku,
+              "sku": sku.replace('#', '%23'),
           })
       }
 
@@ -190,7 +182,7 @@ function callGetProductDetails(sSKU, sVariant) {
   const options = {
       parameters: {
           "where": JSON.stringify({
-              "sku": sSKU,
+              "sku": sSKU.replace('#', '%23'),
               "variant": sVariant
           })
       }
@@ -232,7 +224,7 @@ function onErrorGetProductDetails(xhr) {
 * 
 */
 function callSaveProduct(oProduct) {
-
+  
   oApp.setBusy(true);
 
   var optionsProduct = {
@@ -241,7 +233,7 @@ function callSaveProduct(oProduct) {
       }
   };
 
-
+  
   apisaveProduct(optionsProduct);
 
 }
@@ -372,11 +364,11 @@ function onSuccessValidateDeleteProducts(xhr) {
   const hasErrors = aMessages.some(msg => msg.type === sap.ui.core.MessageType.Error);
 
   const state = hasErrors ? sap.ui.core.ValueState.Error : sap.ui.core.ValueState.Warning;
+  const icon = hasErrors ? "sap-icon://message-error" : "sap-icon://message-warning";
   diaConfirmDelete.setState(state);
   diaConfirmDelete.setTitle(`${txtConfirmDeleteDialogTitle.getText()}(${modeldiaConfirmDelete.getData().length})`);
   butConfirmDelete.setVisible(!hasErrors);
   txtDeleteWarning.setVisible(!hasErrors);
-  butConfirmDelete.setEnabled(false);
 
   diaConfirmDelete.open();
 }
@@ -398,6 +390,7 @@ function onErrorValidateDeleteProducts(xhr) {
 */
 function callDeleteProducts(aProductsToDelete) {
   oApp.setBusy(true);
+
   var options = {
       data: aProductsToDelete
   };
@@ -493,7 +486,7 @@ async function callGetKpiReporting(sku, variant) {
   oApp.setBusy(true);
   const options = {
       parameters: {
-          "sku": sku,
+          "sku": sku.replace('#', '%23'),
           "variant": variant
 
       }
