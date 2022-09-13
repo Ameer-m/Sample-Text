@@ -506,8 +506,8 @@
    record.product_countryLimitations = hasCountryLimitations ? getCountryLimitationsDescription(countryLimitationsCodes, countries) : "No country limitation";
    record.hasCountryLimitations = hasCountryLimitations;
  
-   const docStatusWhenIsJnJNonEu = false ? (arDoCHasMultipleLMs ? VerificationStatus.ErrorDoCMultipleLM : NA_STRING) : record.docVerification_status;
-   record.docVerification_status = record.latestVerification === "DOC" ? isJnJNonEu ? docStatusWhenIsJnJNonEu : record.docVerification_status : NA_STRING;
+   const docStatusWhenIsJnJNonEu = !useArDoc ? (arDoCHasMultipleLMs ? VerificationStatus.ErrorDoCMultipleLM : NA_STRING) : record.docVerification_status;
+   record.docVerification_status = record.latestVerification === "DOC" ? isJnJNonEu ? docStatusWhenIsJnJNonEu : record.docVerification_status : checkNullBlank(record.latestVerification) ? null : NA_STRING;
  
    const arStatusWhenIsNonJnJOrIsEu = arVerificationSubmitted ?
      (arDoCHasMultipleVerifications ? VerificationStatus.ErrorDoCMultipleVerifications
@@ -515,7 +515,7 @@
          : record.arVerification_status)
      : "";
  
-   record.arVerification_status = record.latestVerification === "AR" ? arStatusWhenIsNonJnJOrIsEu : NA_STRING
+   record.arVerification_status = record.latestVerification === "AR" ? arStatusWhenIsNonJnJOrIsEu : checkNullBlank(record.latestVerification) ? null : NA_STRING;
    record.arVerificationSubmitted = arVerificationSubmitted;
  
    const verificationsStatusAndDate = getVerificationsStatusAndDate(record);
@@ -526,6 +526,10 @@
    removePropertiesForMultipleLinkedDocuments(record, "pil");
    removePropertiesForMultipleLinkedDocuments(record, "ifu");
    return record;
+ }
+ 
+ function checkNullBlank(value) {
+   return value === null || value === "" || value === undefined;
  }
  
  /**
@@ -1340,39 +1344,61 @@
  
        if (latestAr && latestDoc) {
          if (latestAr.updatedAt > latestDoc.updatedAt) {
-           obj.latestVerification = "AR";
-           obj.doc_docRef = latestAr.docReference;
-           obj.doc_docRev = latestAr.docRevision;
-           obj.arVerification_status = latestAr.status;
-           obj.arVerification_verificationClosedAt = latestAr.verificationClosedAt;
+           if (latestDocRev.docRev === latestAr.docRevision) {
+             obj.latestVerification = "AR";
+             obj.doc_docRef = latestAr.docReference;
+             obj.doc_docRev = latestAr.docRevision;
+             obj.arVerification_status = latestAr.status;
+             obj.arVerification_verificationClosedAt = latestAr.verificationClosedAt;
  
            const latestDocDetails = await entities.eu_mdr_verification_task.createQueryBuilder("docVerification")
              .where({ reference: latestAr.docReference, revision: latestAr.docRevision })
              .orderBy({ "docVerification.updatedAt": "DESC" })
              .getOne();
+             obj.arVerification_status = latestAr.status;
+             obj.arVerification_verificationClosedAt = latestAr.verificationClosedAt;
+            }
+            else {
+              obj.latestVerification = "DOC";
+              const latestDocDetails = await entities.eu_mdr_verification_task.createQueryBuilder("docVerification")
+                .where({ reference: latestAr.docReference, revision: obj.doc_docRev })
+                .orderBy({ "docVerification.updatedAt": "DESC" })
+                .getOne();
+              if (latestDocDetails) {
+                obj.doc_docRev = latestDocRev.docRev;
+                obj.docVerification_taskRecordNo = latestDocDetails.taskRecordNo;
+                obj.docVerification_strategyId = latestDocDetails.strategyId;
+                obj.docVerification_taskTypeId = latestDocDetails.taskTypeId;
+                obj.docVerification_status = latestDocDetails.status;
+                obj.docVerification_updatedBy = latestDocDetails.updatedBy;
+                obj.docVerification_comments = latestDocDetails.comments;
+                obj.docVerification_verificationStartedAt = latestDocDetails.verificationStartedAt;
+                obj.docVerification_verificationClosedAt = latestDocDetails.verificationClosedAt;
+                obj.docVerification_id = latestDocDetails.id;
+              }
  
-           if (latestDocDetails) {
-             obj.docVerification_taskRecordNo = latestDocDetails.taskRecordNo;
-             obj.docVerification_strategyId = latestDocDetails.strategyId;
-             obj.docVerification_taskTypeId = latestDocDetails.taskTypeId;
-             obj.docVerification_status = latestDocDetails.status;
-             obj.docVerification_updatedBy = latestDocDetails.updatedBy;
-             obj.docVerification_comments = latestDocDetails.comments;
-             obj.docVerification_verificationStartedAt = latestDocDetails.verificationStartedAt;
-             obj.docVerification_verificationClosedAt = latestDocDetails.verificationClosedAt;
-             obj.docVerification_id = latestDocDetails.id;
-           } else {
-             obj.docVerification_taskRecordNo = null;
-             obj.docVerification_strategyId = null;
-             obj.docVerification_taskTypeId = null;
-             obj.docVerification_status = null;
-             obj.docVerification_updatedBy = null;
-             obj.docVerification_comments = null;
-             obj.docVerification_verificationStartedAt = null;
-             obj.docVerification_verificationClosedAt = null;
-             obj.docVerification_id = null;
-           }
-         } else {
+                if (latestDocDetails) {
+                    obj.docVerification_taskRecordNo = latestDocDetails.taskRecordNo;
+                    obj.docVerification_strategyId = latestDocDetails.strategyId;
+                    obj.docVerification_taskTypeId = latestDocDetails.taskTypeId;
+                    obj.docVerification_status = latestDocDetails.status;
+                    obj.docVerification_updatedBy = latestDocDetails.updatedBy;
+                    obj.docVerification_comments = latestDocDetails.comments;
+                    obj.docVerification_verificationStartedAt = latestDocDetails.verificationStartedAt;
+                    obj.docVerification_verificationClosedAt = latestDocDetails.verificationClosedAt;
+                    obj.docVerification_id = latestDocDetails.id;
+                } else {
+                    obj.docVerification_taskRecordNo = null;
+                    obj.docVerification_strategyId = null;
+                    obj.docVerification_taskTypeId = null;
+                    obj.docVerification_status = null;
+                    obj.docVerification_updatedBy = null;
+                    obj.docVerification_comments = null;
+                    obj.docVerification_verificationStartedAt = null;
+                    obj.docVerification_verificationClosedAt = null;
+                    obj.docVerification_id = null;
+                }}
+            } else {
            obj.latestVerification = "DOC";
            if (obj.doc_docRev === latestDoc.revision) {
              obj.doc_docRef = latestDoc.reference;
@@ -1448,5 +1474,3 @@
    })
    return finalResult;
  }
- 
- 
